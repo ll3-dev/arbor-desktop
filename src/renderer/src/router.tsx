@@ -10,11 +10,11 @@ import { AppRouter } from '@shared/type'
 import SuperJSON from 'superjson'
 
 export const queryClient = new QueryClient()
-export const trpcClient = createTRPCClient({
-  links: [ipcLink({ transformer: SuperJSON })]
-})
+
 export const trpc = createTRPCOptionsProxy<AppRouter>({
-  client: trpcClient,
+  client: createTRPCClient<AppRouter>({
+    links: [ipcLink({ transformer: SuperJSON })]
+  }),
   queryClient
 })
 

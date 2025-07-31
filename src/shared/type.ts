@@ -1,3 +1,3 @@
-import { appRouter } from '@main/apis'
+import { appRouter } from '@shared/apis'
 
 export type AppRouter = typeof appRouter

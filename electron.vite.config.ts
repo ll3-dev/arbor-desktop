@@ -12,10 +12,25 @@ export default defineConfig({
         '@shared': resolve('src/shared')
       }
     },
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        external: ['node-llama-cpp'],
+        output: {
+          format: 'es'
+        }
+      }
+    }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        output: {
+          format: 'es'
+        }
+      }
+    }
   },
   renderer: {
     resolve: {
