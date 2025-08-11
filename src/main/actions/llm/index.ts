@@ -1,15 +1,16 @@
-import { LlamaCpp } from '@langchain/community/llms/llama_cpp'
+import { ChatLlamaCpp } from '@langchain/community/chat_models/llama_cpp'
+import { AIMessageChunk } from '@langchain/core/messages'
 import { getValue, setValue } from '@main/database/KeyValue'
 import { app, BrowserWindow, DownloadItem } from 'electron'
 import { download, Progress } from 'electron-dl'
 
 const LLM_MODEL_DOWNLOADED_KEY = 'llmModelDownloaded'
-const llamaPath = app.getPath('appData') + '/llm/gguf-llama3-Q4_0.bin'
+const llmPath = app.getPath('appData') + '/llm/gemma-3n-E2B-it-UD-Q4_K_XL.gguf'
 const url =
   'https://huggingface.co/unsloth/gemma-3n-E2B-it-GGUF/resolve/main/gemma-3n-E2B-it-UD-Q4_K_XL.gguf?download=true'
 
 class LLM {
-  model: LlamaCpp | null = null
+  model: ChatLlamaCpp | null = null
 
   async initialize() {
     if (this.model) {
@@ -21,17 +22,34 @@ class LLM {
       throw new Error('LLM model not downloaded. Please download the model first.')
     }
 
-    this.model = await LlamaCpp.initialize({ modelPath: llamaPath }).catch((error) => {
+    this.model = await ChatLlamaCpp.initialize({
+      modelPath: llmPath
+    }).catch((error) => {
       console.error('Failed to initialize LLM:', error)
       throw new Error('LLM initialization failed')
     })
   }
 
-  async invoke(question: string): Promise<string> {
+  invoke(question: string): ReturnType<ChatLlamaCpp['invoke']> {
     if (!this.model) {
       throw new Error('Model not initialized. Call initialize() first.')
     }
-    return await this.model.invoke(question)
+    return this.model.invoke(question)
+  }
+
+  async stream(question: string, onStream?: (chunk: AIMessageChunk) => void) {
+    if (!this.model) {
+      throw new Error('Model not initialized. Call initialize() first.')
+    }
+
+    const stream = await this.model.stream(question).catch((error) => {
+      console.error('Failed to stream LLM:', error)
+      throw new Error('LLM streaming failed')
+    })
+
+    for await (const chunk of stream) {
+      onStream?.(chunk)
+    }
   }
 
   // TODO: after add downalod resumability
@@ -44,8 +62,8 @@ class LLM {
     }
 
     return await download(win, url, {
-      directory: llamaPath.replace(/\/[^/]+$/, ''),
-      filename: llamaPath.split('/').pop(),
+      directory: llmPath.replace(/\/[^/]+$/, ''),
+      filename: llmPath.split('/').pop(),
       onProgress
     })
       .then((downloadItem) => {
