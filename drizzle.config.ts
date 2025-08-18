@@ -1,10 +1,13 @@
 import { defineConfig } from 'drizzle-kit'
 
 export default defineConfig({
-  out: './drizzle',
   schema: './src/main/database/schema.ts',
-  dialect: 'sqlite',
+  driver: 'pglite',
+  dialect: 'postgresql',
+  casing: 'snake_case',
+  out: './drizzle',
   dbCredentials: {
-    url: 'file:./arbor.db'
-  }
+    url: 'arbor.db'
+  },
+  strict: true
 })

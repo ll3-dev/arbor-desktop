@@ -1,4 +1,4 @@
-import { ErrorComponentProps, Outlet, createRootRoute } from '@tanstack/react-router'
+import { ErrorComponentProps, Link, Outlet, createRootRoute } from '@tanstack/react-router'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -7,7 +7,31 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  return <Outlet />
+  return (
+    <div className="flex flex-col h-screen">
+      <header className="border-b">
+        <nav className="container flex items-center justify-between py-4">
+          <Link to="/" className="text-xl font-bold">
+            Arbor Chat
+          </Link>
+          <div className="flex gap-4">
+            <Link to="/" className="hover:underline">
+              Home
+            </Link>
+            <Link to="/chat" className="hover:underline">
+              Chat
+            </Link>
+            <Link to="/chat/graph" className="hover:underline">
+              Graph View
+            </Link>
+          </div>
+        </nav>
+      </header>
+      <main className="flex-1 overflow-auto">
+        <Outlet />
+      </main>
+    </div>
+  )
 }
 
 function GlobalNotFound({ error, info }: ErrorComponentProps) {

@@ -1,6 +1,6 @@
 import { ChatLlamaCpp } from '@langchain/community/chat_models/llama_cpp'
 import { AIMessageChunk } from '@langchain/core/messages'
-import { getValue, setValue } from '@main/database/KeyValue'
+import { getValue, setValue } from '@main/database/keyValue'
 import { app, BrowserWindow, DownloadItem } from 'electron'
 import { download, Progress } from 'electron-dl'
 

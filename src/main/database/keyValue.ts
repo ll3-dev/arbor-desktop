@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm'
-import { appDb } from '../../database'
-import { keyValue } from '../schema'
+import { keyValue } from '@main/database/schema'
+import { appDb } from '@main/database'
 
 const findValuePrepared = appDb
   .select({ value: keyValue.value })

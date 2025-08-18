@@ -1,6 +1,6 @@
 import { publicProcedure, router } from '@main/actions/trpc'
 import { z } from 'zod'
-import { deleteValue, getValue, setValue } from '@main/database/KeyValue'
+import { deleteValue, getValue, setValue } from '@main/database/keyValue'
 
 export const keyValueRouter = router({
   getValue: publicProcedure

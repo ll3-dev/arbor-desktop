@@ -1,3 +1,14 @@
-import { drizzle } from 'drizzle-orm/libsql/node'
+import { drizzle } from 'drizzle-orm/pglite'
+import { PGlite } from '@electric-sql/pglite'
 
-export const appDb = drizzle('file:./arbor.db')
+import { vector } from '@electric-sql/pglite/vector'
+import * as schema from './schema'
+
+const client = new PGlite({
+  database: 'arbor.db',
+  extensions: {
+    vector
+  }
+})
+
+export const appDb = drizzle({ schema, client })
