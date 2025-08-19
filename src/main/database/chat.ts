@@ -1,5 +1,5 @@
 import { appDb } from '@main/database'
-import { chats, chunks } from '@main/database/schema'
+import { chats, chunks, tree } from '@main/database/schema'
 import { eq, inArray, sql } from 'drizzle-orm'
 
 export const createChat = async (
@@ -81,3 +81,10 @@ export const getSimilarChunks = async (
 
 export const getAllChats = async (treeId: number) =>
   appDb.select().from(chats).where(eq(chats.treeId, treeId)).orderBy(chats.createdAt)
+
+export const newChat = async (title: string) =>
+  appDb
+    .insert(tree)
+    .values({ title })
+    .returning()
+    .then((result) => result[0])
