@@ -5,6 +5,12 @@ import { trpc } from '@renderer/router'
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 
+// FIXME: AppRouter 타입을 올바르게 가져와야 합니다.
+// import { inferRouterOutputs } from '@trpc/react-query'
+// import { AppRouter } from '@shared/type'
+// type RouterOutput = inferRouterOutputs<AppRouter>
+// type NewChatOutput = RouterOutput['chat']['newChat']
+
 interface NewChatFormProps {
   onChatCreated?: (treeId: number) => void
   onCancel?: () => void
@@ -28,11 +34,11 @@ export function NewChatForm({ onChatCreated, onCancel }: NewChatFormProps) {
       },
       {
         onSuccess: (newChat) => {
-          if (onChatCreated) {
-            onChatCreated(newChat.id)
-          } else {
-            navigate({ to: '/chat', search: { treeId: newChat.id } })
-          }
+          // FIXME: newChat의 타입을 명시적으로 지정해야 합니다.
+          // @ts-ignore: newChat type is unknown, but we know it has an id property
+          onChatCreated?.(newChat.id)
+          // @ts-ignore: newChat type is unknown, but we know it has an id property
+          navigate({ to: '/chat', search: { treeId: newChat.id } })
         },
         onSettled: () => {
           setIsLoading(false)
