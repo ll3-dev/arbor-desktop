@@ -1,40 +1,52 @@
 import { relations, sql } from 'drizzle-orm'
-import {
-  pgTable,
-  AnyPgColumn,
-  index,
-  integer,
-  serial,
-  text,
-  timestamp,
-  vector
-} from 'drizzle-orm/pg-core'
+import { AnySQLiteColumn, customType } from 'drizzle-orm/sqlite-core'
+import { text, integer, sqliteTable } from 'drizzle-orm/sqlite-core'
 
-export const keyValue = pgTable('key_value', {
-  key: serial().primaryKey(),
-  value: text('value').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .default(sql`now()`),
-  deletedAt: timestamp('deleted_at', { withTimezone: true }).default(sql`null`)
+const float32Array = customType<{
+  data: number[]
+  config: { dimensions: number }
+  configRequired: true
+  driverData: Uint8Array
+}>({
+  dataType(config) {
+    return `F32_BLOB(${config.dimensions})`
+  },
+  fromDriver(value: Uint8Array) {
+    return Array.from(new Float32Array(value.buffer))
+  },
+  toDriver(value: number[]) {
+    return sql`vector32(${JSON.stringify(value)})`
+  }
 })
 
-export const tree = pgTable('tree', {
-  id: serial().primaryKey(),
+export const keyValue = sqliteTable('key_value', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' })
+})
+
+export const tree = sqliteTable('tree', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   title: text('title').notNull()
 })
 
-export const chats = pgTable('chats', {
-  id: serial().primaryKey(),
+export const chats = sqliteTable('chats', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   treeId: integer('tree_id')
     .notNull()
     .references(() => tree.id),
-  parentId: integer('parent_id').references((): AnyPgColumn => chats.id),
+  parentId: integer('parent_id').references((): AnySQLiteColumn => chats.id),
   userQuery: text('user_query').notNull(),
   aiResponse: text('ai_response').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`now()`)
+    .default(sql`(unixepoch())`)
 })
 
 export const chatsRelations = relations(chats, ({ one, many }) => ({
@@ -53,18 +65,14 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
   })
 }))
 
-export const chunks = pgTable(
-  'chunks',
-  {
-    id: serial().primaryKey(),
-    chatId: integer('chat_id')
-      .notNull()
-      .references(() => chats.id),
-    content: text('content').notNull(),
-    embedding: vector('embedding', { dimensions: 1024 })
-  },
-  (table) => [index('embeddingIndex').using('hnsw', table.embedding.op('vector_cosine_ops'))]
-)
+export const chunks = sqliteTable('chunks', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  chatId: integer('chat_id')
+    .notNull()
+    .references(() => chats.id),
+  content: text('content').notNull(),
+  embedding: float32Array('embedding', { dimensions: 1024 })
+})
 
 export const chunksRelations = relations(chunks, ({ one }) => ({
   node: one(chats, {

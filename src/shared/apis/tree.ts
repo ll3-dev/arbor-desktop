@@ -2,7 +2,7 @@ import { publicProcedure, router } from '@main/actions/trpc'
 import { createTree, getAllTrees, getTree } from '@main/database/tree'
 import z from 'zod'
 
-export const treeTouter = router({
+export const treeRouter = router({
   getTree: publicProcedure.input(z.object({ treeId: z.number() })).query(async ({ input }) => {
     const { treeId } = input
     return getTree(treeId)

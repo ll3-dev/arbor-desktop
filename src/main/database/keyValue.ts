@@ -1,8 +1,8 @@
-import { eq, sql } from 'drizzle-orm'
 import { keyValue } from '@main/database/schema'
-import { appDb } from '@main/database'
+import { db } from '@main/database'
+import { eq, sql } from 'drizzle-orm'
 
-const findValuePrepared = appDb
+const findValuePrepared = db
   .select({ value: keyValue.value })
   .from(keyValue)
   .where(eq(keyValue.key, sql.placeholder('key')))
@@ -23,9 +23,9 @@ export const setValue = async (key: string, value: string) => {
   console.log(`Setting value for key "${key}":`, value)
 
   if (existing) {
-    const { rowsAffected } = await appDb
+    const { rowsAffected } = await db
       .update(keyValue)
-      .set({ value, updatedAt: new Date().toISOString() })
+      .set({ value, updatedAt: new Date() })
       .where(eq(keyValue.key, key))
       .execute()
       .catch((error) => {
@@ -34,7 +34,7 @@ export const setValue = async (key: string, value: string) => {
       })
     return rowsAffected === 1
   } else {
-    const { rowsAffected } = await appDb
+    const { rowsAffected } = await db
       .insert(keyValue)
       .values({ key, value })
       .execute()
@@ -48,7 +48,7 @@ export const setValue = async (key: string, value: string) => {
 
 export const deleteValue = async (key: string) => {
   console.log(`Deleting value for key "${key}"`)
-  const { rowsAffected } = await appDb
+  const { rowsAffected } = await db
     .delete(keyValue)
     .where(eq(keyValue.key, key))
     .execute()

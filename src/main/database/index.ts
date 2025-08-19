@@ -1,14 +1,21 @@
-import { drizzle } from 'drizzle-orm/pglite'
-import { PGlite } from '@electric-sql/pglite'
-
-import { vector } from '@electric-sql/pglite/vector'
+import { drizzle } from 'drizzle-orm/libsql'
+import { createClient } from '@libsql/client'
 import * as schema from './schema'
+import { sql } from 'drizzle-orm'
 
-const client = new PGlite({
-  database: 'arbor.db',
-  extensions: {
-    vector
-  }
+const client = createClient({
+  url: 'file:arbor.db',
+  offline: true
 })
 
-export const appDb = drizzle({ schema, client })
+export const db = drizzle({ schema, client })
+
+// init embedding index
+await db
+  .run(
+    sql`
+  CREATE INDEX IF NOT EXISTS chunks_index
+  ON chunks(embedding)
+`
+  )
+  .catch(console.error)

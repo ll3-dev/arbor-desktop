@@ -6,6 +6,8 @@ out
 *.log*
 
 *.db
+*.db-wal
+*.db-shm
 
 .tanstack/
 drizzle/

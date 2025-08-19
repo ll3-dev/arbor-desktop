@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { trpc } from '@renderer/router'
+import z from 'zod'
 
 type Message = {
   id: string
@@ -11,14 +12,19 @@ type Message = {
   role: 'user' | 'assistant'
 }
 
+const productSearchSchema = z.object({
+  treeId: z.number().min(1).optional()
+})
+
 export const Route = createFileRoute('/chat/')({
-  component: ChatComponent
+  component: ChatComponent,
+  validateSearch: (search) => productSearchSchema.parse(search)
 })
 
 function ChatComponent() {
-  const { chatId } = Route.useSearch()
+  const { treeId } = Route.useSearch()
 
-  const { data: existingChat } = useQuery(trpc.chat.getChat.queryOptions({ chatId: Number(chatId) || 0 }))
+  const { data: existingChat } = useQuery(trpc.chat.getChat.queryOptions({}))
 
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>(existingChat?.messages || [])
@@ -37,21 +43,21 @@ function ChatComponent() {
     setMessage('')
 
     try {
-      let chatIdNum = Number(chatId)
-      if (!chatIdNum || chatIdNum <= 0) {
+      let treeIdNum = Number(treeId)
+      if (!treeIdNum || treeIdNum <= 0) {
         // Create new chat if it doesn't exist
-        const newChat = await createChatMutation.mutateAsync({ 
+        const newChat = await createChatMutation.mutateAsync({
           title: message.substring(0, 30),
           userQuery: message
         })
-        chatIdNum = newChat.id
-        
+        treeIdNum = newChat.id
+
         // Update the URL with the new chat ID
-        Route.useNavigate()({ search: { chatId: chatIdNum } })
+        Route.useNavigate()({ search: { treeId: treeIdNum } })
       }
 
       // Add user message to database
-      await addMessageMutation.mutateAsync({ chatId: chatIdNum, content: message, role: 'user' })
+      await addMessageMutation.mutateAsync({ treeId: treeIdNum, content: message, role: 'user' })
 
       // Get AI response (in a real app, this would be a streaming response)
       // For now we'll simulate a response
@@ -66,7 +72,7 @@ function ChatComponent() {
 
       // Add AI message to database
       await addMessageMutation.mutateAsync({
-        chatId: chatIdNum,
+        treeId: treeIdNum,
         content: aiMessage.content,
         role: 'assistant'
       })

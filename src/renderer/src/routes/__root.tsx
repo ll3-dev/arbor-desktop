@@ -10,7 +10,7 @@ function RootComponent() {
   return (
     <div className="flex flex-col h-screen">
       <header className="border-b">
-        <nav className="container flex items-center justify-between py-4">
+        <nav className="container flex items-center justify-between py-4 max-w-[1200px] mx-auto">
           <Link to="/" className="text-xl font-bold">
             Arbor Chat
           </Link>

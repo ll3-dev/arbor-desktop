@@ -1,4 +1,4 @@
-import { appDb } from '@main/database'
+import { db } from '@main/database'
 import { chats, chunks, tree } from '@main/database/schema'
 import { eq, inArray, sql } from 'drizzle-orm'
 
@@ -6,25 +6,36 @@ export const createChat = async (
   treeId: number,
   data: Omit<typeof chats.$inferInsert, 'treeId' | 'createdAt'>
 ) =>
-  appDb
+  db
     .insert(chats)
     .values({ treeId, ...data })
     .returning()
 
-export const getChat = async (id: number) =>
-  appDb.select().from(chats).where(eq(chats.id, id)).limit(1)
+export const getChat = async (id: number) => db.select().from(chats).where(eq(chats.id, id)).limit(1)
 
-// TODO: rCTE
 export const getRecentChatHistory = async (chatId: number, limit = 3) => {
-  const result = await appDb.execute<typeof chats.$inferSelect>(`
-     WITH RECURSIVE current_branch_nodes (node_id) AS (
-            SELECT ${chats.id} FROM ${chats} WHERE ${chats.id} = ${chatId}
-            UNION ALL
-            SELECT n.parentId FROM ${chats} n JOIN current_branch_nodes cbn ON n.id = cbn.node_id WHERE n.parentId IS NOT NULL
-        )
-        SELECT * FROM current_branch_nodes LIMIT ${limit};
-    `)
-  return result.rows
+  const recursiveQuery = sql`
+    WITH RECURSIVE current_branch_nodes (id) AS (
+      SELECT id FROM chats WHERE id = ${chatId}
+      UNION ALL
+      SELECT n.parentId FROM chats n
+      JOIN current_branch_nodes cbn ON n.id = cbn.id
+      WHERE n.parentId IS NOT NULL
+    )
+    SELECT * FROM current_branch_nodes LIMIT ${limit};
+  `
+  const result = await db.run(recursiveQuery)
+  return result.rows.map((r) => {
+    return {
+      id: r.id as number,
+      treeId: r.treeId as number,
+      parentId: r.parentId as number | null,
+      userQuery: r.userQuery as string,
+      aiResponse: r.aiResponse as string,
+      createdAt: r.createdAt as number,
+      updatedAt: r.updatedAt as number
+    }
+  })
 }
 
 const getNodeIdsInScope = async (
@@ -33,7 +44,7 @@ const getNodeIdsInScope = async (
   searchScope: 'branch' | 'tree'
 ) => {
   if (searchScope === 'tree') {
-    const results = await appDb
+    const results = await db
       .select({ chatId: chats.id })
       .from(chats)
       .where(sql`${chats.treeId} = ${treeId}`)
@@ -41,21 +52,21 @@ const getNodeIdsInScope = async (
   }
 
   const recursiveQuery = sql`
-        WITH RECURSIVE current_branch_nodes (node_id) AS (
+        WITH RECURSIVE current_branch_nodes (id) AS (
             SELECT ${chats.id} FROM ${chats} WHERE ${chats.id} = ${chatId}
             UNION ALL
-            SELECT n.parentId FROM ${chats} n JOIN current_branch_nodes cbn ON n.id = cbn.node_id WHERE n.parentId IS NOT NULL
+            SELECT n.parentId FROM ${chats} n JOIN current_branch_nodes cbn ON n.id = cbn.id WHERE n.parentId IS NOT NULL
         )
-        SELECT node_id FROM current_branch_nodes;
+        SELECT id FROM current_branch_nodes;
     `
-  const results = await appDb.execute<{ node_id: number }>(recursiveQuery)
-  return results.rows.map((r) => r.node_id)
+  const results = await db.run(recursiveQuery)
+  return results.rows.map((r) => r.id as number)
 }
 
 export const getSimilarChunks = async (
   treeId: number,
   chatId: number,
-  embeddingVector: Float32Array,
+  embedding: Float32Array,
   limit = 3,
   searchScope: 'branch' | 'tree' = 'branch'
 ) => {
@@ -66,24 +77,23 @@ export const getSimilarChunks = async (
     return []
   }
 
-  return appDb
+  return await db
     .select({
-      chunkId: chunks.id,
       chatId: chunks.chatId,
       content: chunks.content,
-      distance: sql<number>`vector_distance_cos_vss(${chunks.embedding}, ${embeddingVector.buffer})`
+      distance: sql`distnace`
     })
-    .from(chunks)
-    .where(inArray(chunks.chatId, targetNodeIds))
-    .orderBy(sql`vector_distance_cos_vss(${chunks.embedding}, ${embeddingVector.buffer})`)
-    .limit(limit)
+    .from(
+      sql`vector_top_k('chunks_index', vector32(${JSON.stringify(Array.from(embedding))}), ${limit})`
+    )
+    .leftJoin(chunks, inArray(chunks.chatId, targetNodeIds))
 }
 
 export const getAllChats = async (treeId: number) =>
-  appDb.select().from(chats).where(eq(chats.treeId, treeId)).orderBy(chats.createdAt)
+  db.select().from(chats).where(eq(chats.treeId, treeId)).orderBy(chats.createdAt)
 
 export const newChat = async (title: string) =>
-  appDb
+  db
     .insert(tree)
     .values({ title })
     .returning()
