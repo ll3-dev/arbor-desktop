@@ -13,3 +13,11 @@ export const getAllTrees = async () => {
 export const createTree = async (title: string) => {
   return db.insert(tree).values({ title }).returning()
 }
+
+export const deleteTree = async (treeId: number) => {
+  return db.delete(tree).where(eq(tree.id, treeId)).returning()
+}
+
+export const updateTree = async (treeId: number, title: string) => {
+  return db.update(tree).set({ title }).where(eq(tree.id, treeId)).returning()
+}

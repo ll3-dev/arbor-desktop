@@ -112,6 +112,109 @@ The application uses tRPC for type-safe communication between the main and rende
 3. Implement the tRPC procedure in `src/main/actions/`
 
 Example API definition:
+```ts
+// src/shared/apis/example.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const exampleRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return `Hello, ${input.name}!`;
+    }),
+});
+```
+
+Example API implementation:
+```ts
+// src/main/actions/example.ts
+import { hello } from './example';
+
+export const exampleActions = {
+  hello: async (input: { name: string }) => {
+    // Implementation
+    return `Hello, ${input.name}!`;
+  },
+};
+```
+
+### Adding Tree Management APIs
+
+To add new tree management functionality:
+
+1. Create a new router in `src/shared/apis/tree.ts`
+2. Add the new router to `appRouter` in `src/shared/apis/index.ts`
+3. Implement the tRPC procedure in `src/main/actions/tree.ts`
+4. Add database functions in `src/main/database/tree.ts`
+
+Example tree API definition:
+```ts
+// src/shared/apis/tree.ts
+import { publicProcedure, router } from '@main/actions/trpc';
+import { createTree, deleteTree, getAllTrees, getTree, updateTree } from '@main/database/tree';
+import z from 'zod';
+
+export const treeRouter = router({
+  getTree: publicProcedure.input(z.object({ treeId: z.number() })).query(async ({ input }) => {
+    const { treeId } = input;
+    return getTree(treeId);
+  }),
+  getAllTrees: publicProcedure.query(async () => {
+    return getAllTrees();
+  }),
+  createTree: publicProcedure.input(z.object({ title: z.string() })).mutation(async ({ input }) => {
+    const { title } = input;
+    return createTree(title);
+  }),
+  deleteTree: publicProcedure.input(z.object({ treeId: z.number() })).mutation(async ({ input }) => {
+    const { treeId } = input;
+    return deleteTree(treeId);
+  }),
+  updateTree: publicProcedure.input(z.object({ treeId: z.number(), title: z.string() })).mutation(async ({ input }) => {
+    const { treeId, title } = input;
+    return updateTree(treeId, title);
+  }),
+});
+```
+
+Example tree API implementation:
+```ts
+// src/main/actions/tree.ts
+import { deleteTree, updateTree } from '@main/database/tree';
+
+export const deleteTreeAction = async (treeId: number) => {
+  try {
+    const result = await deleteTree(treeId);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error deleting tree:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+export const updateTreeAction = async (treeId: number, title: string) => {
+  try {
+    const result = await updateTree(treeId, title);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error updating tree:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+```
+
+The application uses tRPC for type-safe communication between the main and renderer processes.
+
+### Adding a New API Endpoint
+
+1. Create a new router in `src/shared/apis/`
+2. Add the new router to `appRouter` in `src/shared/apis/index.ts`
+3. Implement the tRPC procedure in `src/main/actions/`
+
+Example API definition:
 
 ```ts
 // src/shared/apis/example.ts

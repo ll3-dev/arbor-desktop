@@ -58,7 +58,86 @@ export const dbActions = {
   getUsers: async () => {
     return await db.select().from(users);
   },
-  
+
+  createUser: async (userData: typeof users.$inferInsert) => {
+    return await db.insert(users).values(userData);
+  },
+};
+```
+
+### Tree Database Operations
+
+The application includes specific database operations for managing tree data structures.
+
+#### getTree
+
+Retrieves a specific tree by its ID.
+
+```ts
+// In src/main/database/tree.ts
+export const getTree = async (treeId: number) => {
+  return db.select().from(tree).where(eq(tree.id, treeId)).limit(1);
+};
+```
+
+#### getAllTrees
+
+Retrieves all trees.
+
+```ts
+// In src/main/database/tree.ts
+export const getAllTrees = async () => {
+  return db.select().from(tree);
+};
+```
+
+#### createTree
+
+Creates a new tree.
+
+```ts
+// In src/main/database/tree.ts
+export const createTree = async (title: string) => {
+  return db.insert(tree).values({ title }).returning();
+};
+```
+
+#### deleteTree
+
+Deletes a tree by its ID.
+
+```ts
+// In src/main/database/tree.ts
+export const deleteTree = async (treeId: number) => {
+  return db.delete(tree).where(eq(tree.id, treeId)).returning();
+};
+```
+
+#### updateTree
+
+Updates a tree's title by its ID.
+
+```ts
+// In src/main/database/tree.ts
+export const updateTree = async (treeId: number, title: string) => {
+  return db.update(tree).set({ title }).where(eq(tree.id, treeId)).returning();
+};
+```
+
+Database operations are performed in the main process through the tRPC API. The renderer process should not directly access the database but should use the API instead.
+
+### Example Database Operation
+
+```ts
+// In src/main/actions/db.ts
+import { db } from '../database';
+import { users } from '../../drizzle/schema';
+
+export const dbActions = {
+  getUsers: async () => {
+    return await db.select().from(users);
+  },
+
   createUser: async (userData: typeof users.$inferInsert) => {
     return await db.insert(users).values(userData);
   },

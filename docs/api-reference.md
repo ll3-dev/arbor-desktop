@@ -10,6 +10,7 @@ The application uses tRPC for type-safe communication between the main and rende
 
 1. [App Router](#app-router)
 2. [Database Router](#database-router)
+3. [Tree Router](#tree-router)
 
 ## App Router
 
@@ -65,7 +66,7 @@ Executes a SQL query against the database.
 }
 ```
 
-**Output:** 
+**Output:**
 ```ts
 {
   rows: any[];
@@ -79,6 +80,136 @@ const result = await trpc.db.query.mutate({
   sql: "SELECT * FROM users WHERE id = ?",
   parameters: [1]
 });
+```
+
+## Tree Router
+
+The tree router contains APIs for managing tree data structures.
+
+### getTree
+
+Retrieves a specific tree by its ID.
+
+**Endpoint:** `tree.getTree`
+
+**Input:**
+```ts
+{
+  treeId: number;
+}
+```
+
+**Output:**
+```ts
+{
+  id: number;
+  title: string;
+}[]
+```
+
+**Example:**
+```ts
+const trees = await trpc.tree.getTree.query({ treeId: 1 });
+```
+
+### getAllTrees
+
+Retrieves all trees.
+
+**Endpoint:** `tree.getAllTrees`
+
+**Input:** None
+
+**Output:**
+```ts
+{
+  id: number;
+  title: string;
+}[]
+```
+
+**Example:**
+```ts
+const trees = await trpc.tree.getAllTrees.query();
+```
+
+### createTree
+
+Creates a new tree.
+
+**Endpoint:** `tree.createTree`
+
+**Input:**
+```ts
+{
+  title: string;
+}
+```
+
+**Output:**
+```ts
+{
+  id: number;
+  title: string;
+}[]
+```
+
+**Example:**
+```ts
+const newTree = await trpc.tree.createTree.mutate({ title: "New Tree" });
+```
+
+### deleteTree
+
+Deletes a tree by its ID.
+
+**Endpoint:** `tree.deleteTree`
+
+**Input:**
+```ts
+{
+  treeId: number;
+}
+```
+
+**Output:**
+```ts
+{
+  id: number;
+  title: string;
+}[]
+```
+
+**Example:**
+```ts
+const deletedTree = await trpc.tree.deleteTree.mutate({ treeId: 1 });
+```
+
+### updateTree
+
+Updates a tree's title by its ID.
+
+**Endpoint:** `tree.updateTree`
+
+**Input:**
+```ts
+{
+  treeId: number;
+  title: string;
+}
+```
+
+**Output:**
+```ts
+{
+  id: number;
+  title: string;
+}[]
+```
+
+**Example:**
+```ts
+const updatedTree = await trpc.tree.updateTree.mutate({ treeId: 1, title: "Updated Tree" });
 ```
 
 ## Adding New APIs
